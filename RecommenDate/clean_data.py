@@ -25,7 +25,7 @@ def clean_data(data):
     # For non-essay data -> no more than 50 features after encoding
 
     ##### Drop location, last online, sign and ethnicity #####
-    data.drop(columns=['location','last_online','sign','ethnicity'])
+    data.drop(columns=['location','last_online','sign','ethnicityb'])
 
     ###### Replacing null values with 'rather not say' for certain features ######
     data[['drugs', 'smokes', 'offspring', 'body_type', 'drinks']] = data[['drugs', 'smokes', 'offspring', 'body_type', 'drinks']].fillna('rather not say')
