@@ -25,7 +25,7 @@ def clean_data(data):
     # For non-essay data -> no more than 50 features after encoding
 
     ##### Drop location, last online, sign and ethnicity #####
-    data.drop(columns=['location','last_online','sign','ethnicityb'])
+    data.drop(columns=['location','last_online','sign','ethnicity','height'],inplace=True)
 
     ###### Replacing null values with 'rather not say' for certain features ######
     data[['drugs', 'smokes', 'offspring', 'body_type', 'drinks']] = data[['drugs', 'smokes', 'offspring', 'body_type', 'drinks']].fillna('rather not say')
@@ -36,9 +36,10 @@ def clean_data(data):
     data['income'] = data['income'].replace(-1, mean)
 
     ###### Replacing null values with logical answers(strings) for 'education', 'job' and 'speaks' features ######
-    data.education=data.education.fillna('graduated from college/university').value_counts()
+    data.education.fillna('graduated from college/university',inplace=True)
     data.job=data.job.fillna('other')
     data.speaks=data.speaks.fillna('english')
+
 
     ###### Cleaning the 'religion' feature ######
     imputer2 = SimpleImputer(strategy="most_frequent") # Instantiate a SimpleImputer object with your strategy of choice
@@ -48,13 +49,18 @@ def clean_data(data):
     data['religion_info'] = data['religion'].apply(lambda x: get_religion(x))
 
     ###### Replacing 'height' outliers with mean ######
-    data.loc[data['height'] < 40, 'height'] = data.height.mean()
+    # data.loc[data['height'] < 40, 'height'] = data.height.mean()
 
-    ##### Replacing null values for 'pets' #####
+    ##### Replacing null values for 'pets' and grouping into interests #####
     data.pets=data.pets.fillna('likes dogs and likes cats')
     data.pets.replace(['likes dogs','likes dogs and has cats','has dogs','has dogs and likes cats','has dogs and has cats','has cats','likes cats'],'likes dogs and likes cats',inplace=True)
     data.pets.replace(['has dogs and dislikes cats','dislikes cats'],'likes dogs and dislikes cats',inplace=True)
     data.pets.replace(['dislikes dogs and has cats','dislikes dogs'],'dislikes dogs and likes cats',inplace=True)
+
+    ##### Grouping offspring interests #####
+    data.offspring.replace(["doesn't have kids, and doesn't want any","has kids, but doesn't want more","has a kid, but doesn't want more"],"doesn't want kids",inplace=True)
+    data.offspring.replace(["doesn't have kids","doesn't have kids, but might want them","has kids","has a kid","has a kid, and might want more","might want kids","has kids, and might want more"],"might want kids",inplace=True)
+    data.offspring.replace(["doesn't have kids, but wants them","wants kids","has a kid, and wants more","has kids, and wants more"],"wants more kids",inplace=True)
 
     ###### cleaning 'status' feature ######
     data.status.replace("unknown","available",inplace=True)
@@ -110,7 +116,7 @@ def clean_data(data):
     data['essay7_cleaned']=data['essay7'].apply(lambda x:clean(x)).apply(lambda x:' '.join(x))
     data['essay8_cleaned']=data['essay8'].apply(lambda x:clean(x)).apply(lambda x:' '.join(x))
     data['essay9_cleaned']=data['essay9'].apply(lambda x:clean(x)).apply(lambda x:' '.join(x))
-
+    data.drop(columns=['essay0','essay1','essay2','essay3','essay4','essay5','essay6','essay7','essay8','essay9','religion'],inplace=True)
     return data
 
 
