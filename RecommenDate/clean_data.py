@@ -9,6 +9,12 @@ from nltk.corpus import stopwords
 import string
 from nltk.stem.wordnet import WordNetLemmatizer
 from nltk import word_tokenize
+import nltk
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
+nltk.download('omw-1.4')
+
 
 def get_data():
     data = pd.read_csv("../RecommenDate/data/okcupid_profiles.csv")
@@ -16,10 +22,10 @@ def get_data():
 
 def clean_data(data):
 
-    ###### !!!!!!!!!!!!! ######
-    ###### Discuss features and remove certain stuff ######
-    ###### !!!!!!!!!!!!! ######
     # For non-essay data -> no more than 50 features after encoding
+
+    ##### Drop location, last online, sign and ethnicity #####
+    data.drop(columns=['location','last_online','sign','ethnicity','height'],inplace=True)
 
     ###### Replacing null values with 'rather not say' for certain features ######
     data[['drugs', 'smokes', 'offspring', 'body_type', 'drinks']] = data[['drugs', 'smokes', 'offspring', 'body_type', 'drinks']].fillna('rather not say')
@@ -30,28 +36,10 @@ def clean_data(data):
     data['income'] = data['income'].replace(-1, mean)
 
     ###### Replacing null values with logical answers(strings) for 'education', 'job' and 'speaks' features ######
-    data.education=data.education.fillna('graduated from college/university').value_counts()
+    data.education.fillna('graduated from college/university',inplace=True)
     data.job=data.job.fillna('other')
     data.speaks=data.speaks.fillna('english')
 
-    ###### Cleaning 'state' feature and changing US locations to England locations ######
-    data['state'] = data['location'].str.replace(r'(.*),\s','', regex=True)
-    data.state.replace("california", "London", inplace=True)
-    data.state.replace("new york", "Manchester", inplace=True)
-    data.state.replace("illinois", "Birmingham", inplace=True)
-    data.state.replace("massachusetts", "Leeds", inplace=True)
-    data.state.replace("texas", "Glasgow", inplace=True)
-    data.loc[(data['state'] != 'London') & (data['state'] != 'Manchester')  & (data['state'] != 'Birmingham') & (data['state'] != 'Leeds') &  (data['state'] != 'Glasgow'), "state"] = "Other"
-    data['state'].value_counts()
-    data.rename(columns = {'state':'city'}, inplace = True)
-
-    ###### Cleaning the 'sign' feature ######
-    imputer = SimpleImputer(strategy="most_frequent")
-    imputer.fit(data[['sign']])
-    data['sign'] = imputer.transform(data[['sign']])
-    imputer.statistics_
-    data['sign_info'] = data['sign'].apply(lambda x: get_sign(x))
-    data['sign_level'] = data['sign'].apply(lambda x: get_level_of_interest(x))
 
     ###### Cleaning the 'religion' feature ######
     imputer2 = SimpleImputer(strategy="most_frequent") # Instantiate a SimpleImputer object with your strategy of choice
@@ -61,12 +49,21 @@ def clean_data(data):
     data['religion_info'] = data['religion'].apply(lambda x: get_religion(x))
 
     ###### Replacing 'height' outliers with mean ######
-    data.loc[data['height'] < 40, 'height'] = data.height.mean()
+    # data.loc[data['height'] < 40, 'height'] = data.height.mean()
+
+    ##### Replacing null values for 'pets' and grouping into interests #####
+    data.pets=data.pets.fillna('likes dogs and likes cats')
+    data.pets.replace(['likes dogs','likes dogs and has cats','has dogs','has dogs and likes cats','has dogs and has cats','has cats','likes cats'],'likes dogs and likes cats',inplace=True)
+    data.pets.replace(['has dogs and dislikes cats','dislikes cats'],'likes dogs and dislikes cats',inplace=True)
+    data.pets.replace(['dislikes dogs and has cats','dislikes dogs'],'dislikes dogs and likes cats',inplace=True)
+
+    ##### Grouping offspring interests #####
+    data.offspring.replace(["doesn't have kids, and doesn't want any","has kids, but doesn't want more","has a kid, but doesn't want more"],"doesn't want kids",inplace=True)
+    data.offspring.replace(["doesn't have kids","doesn't have kids, but might want them","has kids","has a kid","has a kid, and might want more","might want kids","has kids, and might want more"],"might want kids",inplace=True)
+    data.offspring.replace(["doesn't have kids, but wants them","wants kids","has a kid, and wants more","has kids, and wants more"],"wants more kids",inplace=True)
 
     ###### cleaning 'status' feature ######
-    data['status'] = np.where(data['status'].str.contains('single'), 'available', data['status'])
-    data = pd.concat([pd.get_dummies(data.status, prefix='status', prefix_sep='_'), data], axis = 1)
-    data.drop("status_unknown", axis="columns", inplace=True)
+    data.status.replace("unknown","available",inplace=True)
 
     ###### replacing null values for 'diet' ######
     data.diet.fillna("no restriction", inplace=True)
@@ -84,12 +81,12 @@ def clean_data(data):
     data['diet'] = np.where(data['diet'].str.contains('mostly halal|strictly halal|halal'), 'halal', data['diet'])
 
     ###### Cleaning 'ethnicity' feature ######
-    data['eth_num'] = data.ethnicity.str.len()
-    data["ethnicity2"] = "race"
-    data.loc[data.eth_num<2, "ethnicity2"] = data.ethnicity.str[0]
-    data.loc[data.eth_num==2, "ethnicity2"] = "biracial"
-    data.loc[data.eth_num>2, "ethnicity2"] = "multiracial"
-    data.loc[data.eth_num>2, "eth_num"] = 3
+    # data['eth_num'] = data.ethnicity.str.len()
+    # data["ethnicity2"] = "race"
+    # data.loc[data.eth_num<2, "ethnicity2"] = data.ethnicity.str[0]
+    # data.loc[data.eth_num==2, "ethnicity2"] = "biracial"
+    # data.loc[data.eth_num>2, "ethnicity2"] = "multiracial"
+    # data.loc[data.eth_num>2, "eth_num"] = 3
 
     ###### Cleaning 'speaks' column ######
     data['speaks_cleaned']=data.speaks.apply(lambda x:clean(x))
@@ -109,27 +106,19 @@ def clean_data(data):
     data['essay7'] = data['essay7'].fillna('')
     data['essay8'] = data['essay8'].fillna('')
     data['essay9'] = data['essay9'].fillna('')
-    data['essay0_cleaned']=data['essay0'].apply(lambda x:clean(x))
-    data['essay0_cleaned']=data['essay0_cleaned'].apply(lambda x:' '.join(x))
-    data['essay1_cleaned']=data['essay1'].apply(lambda x:clean(x))
-    data['essay1_cleaned']=data['essay1_cleaned'].apply(lambda x:' '.join(x))
-    data['essay2_cleaned']=data['essay2'].apply(lambda x:clean(x))
-    data['essay2_cleaned']=data['essay2_cleaned'].apply(lambda x:' '.join(x))
-    data['essay3_cleaned']=data['essay3'].apply(lambda x:clean(x))
-    data['essay3_cleaned']=data['essay3_cleaned'].apply(lambda x:' '.join(x))
-    data['essay4_cleaned']=data['essay4'].apply(lambda x:clean(x))
-    data['essay4_cleaned']=data['essay4_cleaned'].apply(lambda x:' '.join(x))
-    data['essay5_cleaned']=data['essay5'].apply(lambda x:clean(x))
-    data['essay5_cleaned']=data['essay5_cleaned'].apply(lambda x:' '.join(x))
-    data['essay6_cleaned']=data['essay6'].apply(lambda x:clean(x))
-    data['essay6_cleaned']=data['essay6_cleaned'].apply(lambda x:' '.join(x))
-    data['essay7_cleaned']=data['essay7'].apply(lambda x:clean(x))
-    data['essay7_cleaned']=data['essay7_cleaned'].apply(lambda x:' '.join(x))
-    data['essay8_cleaned']=data['essay8'].apply(lambda x:clean(x))
-    data['essay8_cleaned']=data['essay8_cleaned'].apply(lambda x:' '.join(x))
-    data['essay9_cleaned']=data['essay9'].apply(lambda x:clean(x))
-    data['essay9_cleaned']=data['essay9_cleaned'].apply(lambda x:' '.join(x))
-    return clean_data
+    data['essay0_cleaned']=data['essay0'].apply(lambda x:clean(x)).apply(lambda x:' '.join(x))
+    data['essay1_cleaned']=data['essay1'].apply(lambda x:clean(x)).apply(lambda x:' '.join(x))
+    data['essay2_cleaned']=data['essay2'].apply(lambda x:clean(x)).apply(lambda x:' '.join(x))
+    data['essay3_cleaned']=data['essay3'].apply(lambda x:clean(x)).apply(lambda x:' '.join(x))
+    data['essay4_cleaned']=data['essay4'].apply(lambda x:clean(x)).apply(lambda x:' '.join(x))
+    data['essay5_cleaned']=data['essay5'].apply(lambda x:clean(x)).apply(lambda x:' '.join(x))
+    data['essay6_cleaned']=data['essay6'].apply(lambda x:clean(x)).apply(lambda x:' '.join(x))
+    data['essay7_cleaned']=data['essay7'].apply(lambda x:clean(x)).apply(lambda x:' '.join(x))
+    data['essay8_cleaned']=data['essay8'].apply(lambda x:clean(x)).apply(lambda x:' '.join(x))
+    data['essay9_cleaned']=data['essay9'].apply(lambda x:clean(x)).apply(lambda x:' '.join(x))
+    data.drop(columns=['essay0','essay1','essay2','essay3','essay4','essay5','essay6','essay7','essay8','essay9','religion'],inplace=True)
+    return data
+
 
 def primary_language(text):
         primary_lang=[]
