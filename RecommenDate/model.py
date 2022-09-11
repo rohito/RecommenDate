@@ -7,23 +7,14 @@ import joblib
 import pickle
 import os
 from math import sqrt
-from google.cloud import storage
+from data import get_model, get_clean_data
+# RecommenDate/vectorizer0.joblib
 
 
-BUCKET_NAME = "recommendate-lewagon"
-BUCKET_DATA_PATH = "recommendate-lewagon/okcupid_profiles.csv"
-BUCKET_DATACLEAN_PATH = "recommendate-lewagon/clean_data.csv"
-# essay0model = joblib.load(open("essay0_NMF.pkl",'rb'))
-# essay1model = joblib.load(open("essay1_NMF.pkl",'rb'))
-# essay2model = joblib.load(open("essay2_NMF.pkl",'rb'))
-# essay3model = joblib.load(open("essay3_NMF.pkl",'rb'))
-# essay4model = joblib.load(open("essay4_NMF.pkl",'rb'))
-
-
-def vectorizer(essay):
+model = get_model("vectorizer0.joblib")
+def vectorizer(essay,vectorizer=model):
   data_vectorized = vectorizer.transform(essay)
-  joblib.dump(vectorizer,'tfidfvectorizer.joblib')
-  vocab = vectorizer.get_feature_names_out()
+  vocab = vectorizer.get_feature_names()
   return data_vectorized,vocab
 
 
@@ -73,26 +64,12 @@ def decomposition_NMF(model,n_components,essay):
 
 
 
-def download_model( bucket=BUCKET_NAME, rm=True):
-    client = storage.Client().bucket(bucket)
-
-    storage_location = 'models/{}'.format(
-        'model.joblib')
-    blob = client.blob(storage_location)
-    blob.download_to_filename('model.joblib')
-    print("=> pipeline downloaded from storage")
-    model = joblib.load('model.joblib')
-    if rm:
-        os.remove('model.joblib')
-    return model
-
-def get_model(path_to_joblib):
-    pipeline = joblib.load(path_to_joblib)
-    return pipeline
 
 
 if __name__ == '__main__':
 
-    # ⚠️ in order to push a submission to kaggle you need to use the WHOLE dataset
-    cleandf = get_data_from_gcp()
-    cleandf.head()
+
+    df = get_clean_data()
+    model = get_model("vectorizer0.joblib")
+    es0,vocab = vectorizer(df.essay0_cleaned,model)
+    print(es0[0])

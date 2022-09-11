@@ -5,5 +5,8 @@
 **/__pycache__/
 .env
 .python-version
+*.joblib
+.joblib
 raw_data/
 .csv
+
