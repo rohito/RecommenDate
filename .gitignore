@@ -2,10 +2,11 @@
 .coverage
 .ipynb_checkpoints
 .DS_Store
-raw_data/
-*.csv
 **/__pycache__/
 .env
 .python-version
 *.joblib
 .joblib
+raw_data/
+.csv
+
