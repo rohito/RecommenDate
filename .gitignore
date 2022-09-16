@@ -2,8 +2,6 @@
 .coverage
 .ipynb_checkpoints
 .DS_Store
-raw_data/
-*.csv
 **/__pycache__/
 .env
 .python-version
@@ -12,3 +10,5 @@ raw_data/
 *.pkl
 rohit-creds.json
 sivas-credentials.json
+raw_data/
+.csv
