@@ -10,3 +10,5 @@ raw_data/
 *.joblib
 .joblib
 *.pkl
+rohit-creds.json
+sivas-credentials.json

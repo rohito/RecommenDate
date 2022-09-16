@@ -5,7 +5,7 @@ import pandas as pd
 from google.cloud import storage
 # from io import BytesIO
 # from tensorflow.python.lib.io import file_io
-
+IS_GCP = False
 
 BUCKET_NAME = "recommendate-lewagon"
 BUCKET_DATA_PATH = "okcupid_profiles.csv"
@@ -18,21 +18,31 @@ BUCKET_DATACLEAN_PATH = "clean_data.csv"
 
 def get_clean_data():
     """method to get the training data (or a portion of it) from google cloud bucket"""
-    # Add Client() here
-    client = storage.Client()
-    path = f"gs://{BUCKET_NAME}/data/{BUCKET_DATACLEAN_PATH}"
+    if IS_GCP:
+        # Add Client() here
+        client = storage.Client()
+        path = f"gs://{BUCKET_NAME}/data/{BUCKET_DATACLEAN_PATH}"
+    else:
+        path = "RecommenDate/data/clean_data.csv"
     df = pd.read_csv(path)
+
+    df.drop(columns=['Unnamed: 0', 'age', 'status', 'sex', 'orientation', 'body_type',
+    'diet', 'drinks', 'drugs', 'education', 'income', 'job', 'offspring',
+    'pets', 'smokes', 'speaks', 'religion_info', 'strict', 'speaks_cleaned',
+    'primary_language', 'number_of_languages'],inplace=True)
     df = df.fillna('')
     return df
 
 
 def get_data( optimize=False, **kwargs):
     """method to get the training data (or a portion of it) from google cloud bucket"""
-    # Add Client() here
-    client = storage.Client()
-    path = f"gs://{BUCKET_NAME}/data/{BUCKET_DATA_PATH}"
+    if IS_GCP:
+        # Add Client() here
+        client = storage.Client()
+        path = f"gs://{BUCKET_NAME}/data/{BUCKET_DATA_PATH}"
+    else:
+        path = "RecommenDate/data/okcupid_profiles.csv"
     df = pd.read_csv(path)
-    print(df)
     return df
 
 def download_model( bucket=BUCKET_NAME, rm=True):
@@ -76,5 +86,5 @@ def get_model(path_to_joblib):
 if __name__ == '__main__':
 
     # ⚠️ in order to push a submission to kaggle you need to use the WHOLE dataset
-    df = get_data()
-    print(df.head())
+    df = get_clean_data()
+    print(df.columns)

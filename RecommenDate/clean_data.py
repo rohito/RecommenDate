@@ -2,7 +2,6 @@ from contextlib import nullcontext
 import pandas as pd
 import numpy as np
 from sklearn.impute import SimpleImputer
-import matplotlib.pyplot as plt
 import re
 import string
 from nltk.corpus import stopwords
