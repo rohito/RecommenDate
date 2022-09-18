@@ -7,6 +7,8 @@
 .python-version
 *.joblib
 .joblib
+*.pkl
+rohit-creds.json
+sivas-credentials.json
 raw_data/
 .csv
-

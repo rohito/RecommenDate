@@ -3,7 +3,9 @@ import joblib
 import pickle
 import pandas as pd
 from google.cloud import storage
-
+# from io import BytesIO
+# from tensorflow.python.lib.io import file_io
+IS_GCP = False
 
 BUCKET_NAME = "recommendate-lewagon"
 BUCKET_DATA_PATH = "okcupid_profiles.csv"
@@ -16,46 +18,63 @@ BUCKET_DATACLEAN_PATH = "clean_data.csv"
 
 def get_clean_data():
     """method to get the training data (or a portion of it) from google cloud bucket"""
-    # Add Client() here
-    client = storage.Client()
-    path = f"gs://{BUCKET_NAME}/data/{BUCKET_DATACLEAN_PATH}"
+    if IS_GCP:
+        # Add Client() here
+        client = storage.Client()
+        path = f"gs://{BUCKET_NAME}/data/{BUCKET_DATACLEAN_PATH}"
+    else:
+        path = "RecommenDate/data/clean_data.csv"
     df = pd.read_csv(path)
+
+    df.drop(columns=['Unnamed: 0', 'age', 'status', 'body_type',
+    'diet', 'drinks', 'drugs', 'education', 'income', 'job', 'offspring',
+    'pets', 'smokes', 'speaks', 'religion_info', 'strict', 'speaks_cleaned',
+    'primary_language', 'number_of_languages'],inplace=True)
     df = df.fillna('')
     return df
 
 
 def get_data( optimize=False, **kwargs):
     """method to get the training data (or a portion of it) from google cloud bucket"""
-    # Add Client() here
-    client = storage.Client()
-    path = f"gs://{BUCKET_NAME}/data/{BUCKET_DATA_PATH}"
-    df = pd.read_csv(blob)
-    print(df)
+    if IS_GCP:
+        # Add Client() here
+        client = storage.Client()
+        path = f"gs://{BUCKET_NAME}/data/{BUCKET_DATA_PATH}"
+    else:
+        path = "RecommenDate/data/okcupid_profiles.csv"
+    df = pd.read_csv(path)
     return df
 
 def download_model( bucket=BUCKET_NAME, rm=True):
     client = storage.Client().bucket(bucket)
 
-    storage_location = 'models/{}'.format(
-        'model.joblib')
+    storage_location = 'models/pickle_files_svd/{}'.format(
+        'essay3.pkl')
     blob = client.blob(storage_location)
-    blob.download_to_filename('model.joblib')
+    blob.download_to_filename('svd3.pkl')
+
+    # path_essay1 = f"gs://{BUCKET_NAME}/models/pickle_files_svd/essay1.pkl"
+    # f = BytesIO(file_io.read_file_to_string(path_essay1,binary_mode=True))
+    # model = pickle.load()
     print("=> modle downloaded from storage")
-    model = joblib.load('model.joblib')
-    if rm:
-        os.remove('model.joblib')
+    # with open("svd.pkl", 'rb') as pickle_file:
+    #     content = pickle.load(pickle_file)
+    # model = content
+    # return model
+    model = joblib.load("svd3.pkl")
     return model
+
 
 def download_vectoriser(bucket= BUCKET_NAME,rm=True):
     client = storage.Client().bucket(bucket)
 
     storage_location = 'models/vectoriser/{}'.format(
-        f'tfidfvectorizer0.joblib'
+        f'tfidfvectorizer9.joblib'
     )
     blob = client.blob(storage_location)
-    blob.download_to_filename('vectorizer0.joblib')
+    blob.download_to_filename('vectorizer9.joblib')
     print("=> vectorisers downloaded from storage")
-    model = joblib.load("vectorizer0.joblib")
+    model = joblib.load("vectorizer9.joblib")
 
     return model
 
@@ -67,4 +86,5 @@ def get_model(path_to_joblib):
 if __name__ == '__main__':
 
     # ⚠️ in order to push a submission to kaggle you need to use the WHOLE dataset
-    model = download_vectoriser()
+    df = get_clean_data()
+    print(df.columns)

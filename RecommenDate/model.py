@@ -7,69 +7,51 @@ import joblib
 import pickle
 import os
 from math import sqrt
-from data import get_model, get_clean_data
+from RecommenDate.data import get_model, get_clean_data
+from RecommenDate.similarity import similarity,get_topic,matching_topics,similarity_mean
 # RecommenDate/vectorizer0.joblib
+# from sklearn.pipeline import make_pipeline
 
 
-model = get_model("vectorizer0.joblib")
-def vectorizer(essay,vectorizer=model):
-  data_vectorized = vectorizer.transform(essay)
-  vocab = vectorizer.get_feature_names()
-  return data_vectorized,vocab
+class Model():
+  def __init__(self,X,model_vectorizer,model):
+    self.X=X
+    self.model_vectorizer=model_vectorizer
+    self.model=model
 
 
-def similarity(decompose,index):
-  vector=np.array(decompose.iloc[index]).reshape(1,-1)
-  sim=cosine_similarity(decompose,vector).reshape(-1)
-  return pd.DataFrame(sim,columns=['similarity']).sort_values(by='similarity',ascending=False)
+  def vectorizer(self):
+    data_vectorized = self.model_vectorizer.transform(self.X)
+    vocab = self.model_vectorizer.get_feature_names_out()
+    return data_vectorized,vocab
 
+  def decomposition_svd(self,n_components):
+    self.data_vectorized,self.vocab=Model.vectorizer(self)
+    decompose=pd.DataFrame(self.model.transform(self.data_vectorized),index=self.X)
+    components=self.model.components_
+    svd_components=pd.DataFrame(components,columns=self.vocab)
+    # svd_explained=self.model.explained_variance_ratio_
+    return decompose,svd_components #,svd_explained
 
-def get_topic(components,n_components,number_of_words):
-  topics=[]
-  for i in range(n_components):
-    X=pd.DataFrame(components.iloc[i].sort_values(ascending=False))
-    topics.append(', '.join(X.reset_index()['index'][:number_of_words]))
-  return topics
-
-
-def matching_topics(decompose,i,j,components):
-  contribution_matrix=[]
-  sum_i=[]
-  sum_j=[]
-  for k in range(len(components)):
-    contribution_matrix.append(decompose.iloc[i][k]*decompose.iloc[j][k])
-    sum_i.append(decompose.iloc[i][k]*decompose.iloc[i][k])
-    sum_j.append(decompose.iloc[j][k]*decompose.iloc[j][k])
-  sim2=cosine_similarity(np.expand_dims(np.array(decompose.iloc[i]),0),np.expand_dims(np.array(decompose.iloc[j]),0))
-  sim=np.sum(contribution_matrix)/np.sqrt(np.sum(sum_i)*np.sum(sum_j))
-  contribution_matrix=np.array(contribution_matrix/sim)
-  return np.argsort(contribution_matrix)[::-1][:5],sim
-
-def similarity_matrix(topics,decompose,interest_index,pca_components):
-
-  df=pd.DataFrame()
-  for i in range(len(decompose)):
-    match_topic=[]
-    for k in range(len(matching_topics(decompose,interest_index,i,pca_components)[0])):
-      match_topic.append(topics[matching_topics(decompose,interest_index,i,pca_components)[0][k]])
-    df=df.append(pd.DataFrame(match_topic).T)
-  return df
-
-def decomposition_NMF(model,n_components,essay):
-  vectorized_data,vocab = vectorizer(essay)
-  decompose_NMF = pd.DataFrame(model.transform(vectorized_data),index=essay)
-  components = model.components_
-  NMF_components = pd.DataFrame(components,columns=vocab)
-  return decompose_NMF,NMF_components
-
-
+  def decomposition_NMF(self,model,n_components,essay):
+    decompose_NMF = pd.DataFrame(model.transform(self.data_vectorized),index=self.X)
+    components = model.components_
+    NMF_components = pd.DataFrame(components,columns=vocab)
+    return decompose_NMF,NMF_components
 
 
 
 if __name__ == '__main__':
-
-
-    df = get_clean_data()
-    model = get_model("vectorizer0.joblib")
-    es0,vocab = vectorizer(df.essay0_cleaned,model)
-    print(es0[0])
+  data = get_clean_data()
+  decompose_list=[]
+  components_list=[]
+  for i in range(10):
+    model_vectorizer = get_model(f"models/vectorizer{i}.joblib")
+    model=get_model(f"models/essay{i}.pkl")
+    model_fit=Model(data[f'essay{i}_cleaned'],model_vectorizer,model)
+    data_vectorized,vocab=model_fit.vectorizer()
+    decompose,components,svd_explained=model_fit.decomposition_svd(n_components=500)
+    decompose_list.append(decompose)
+    components_list.append(components)
+  df_sim=similarity_mean(decompose_list,500,index=3)
+  print(df_sim)
