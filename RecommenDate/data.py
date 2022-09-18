@@ -26,7 +26,7 @@ def get_clean_data():
         path = "RecommenDate/data/clean_data.csv"
     df = pd.read_csv(path)
 
-    df.drop(columns=['Unnamed: 0', 'age', 'status', 'sex', 'orientation', 'body_type',
+    df.drop(columns=['Unnamed: 0', 'age', 'status', 'body_type',
     'diet', 'drinks', 'drugs', 'education', 'income', 'job', 'offspring',
     'pets', 'smokes', 'speaks', 'religion_info', 'strict', 'speaks_cleaned',
     'primary_language', 'number_of_languages'],inplace=True)

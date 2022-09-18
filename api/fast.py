@@ -27,7 +27,7 @@ def index():
 
 
 @app.get("/predict")
-def predict(essay0,essay1,essay2,essay3,essay4,essay5,essay6,essay7,essay8,essay9):
+def predict(sex,orientation,essay0,essay1,essay2,essay3,essay4,essay5,essay6,essay7,essay8,essay9):
     print("beginning download")
     df_clean = get_clean_data()
     print("downloaded clean data")
@@ -42,6 +42,8 @@ def predict(essay0,essay1,essay2,essay3,essay4,essay5,essay6,essay7,essay8,essay
     #clean essays
     print(df_clean.head())
     d = {
+        'sex':sex,
+        'orientation' : orientation,
         'essay0_cleaned': essay0,
         'essay1_cleaned': essay1,
         'essay2_cleaned': essay2,
@@ -78,12 +80,23 @@ def predict(essay0,essay1,essay2,essay3,essay4,essay5,essay6,essay7,essay8,essay
         components_list.append(components)
     df_sim=similarity_mean(decompose_list,500,index=59946)
     # res = np.argsort(df_sim)[::-1][:5]
-    indexes = df_sim.head(4).index
+    indexes = df_sim.index
     df_result = dforiginal.iloc[indexes[1:]]
     df_result = df_result.fillna('')
-    dict2 = df_result.to_dict()
+    if df_clean.iloc[59946]["orientation"]=="straight":
+        if df_clean.iloc[59946]["sex"]=="m":
+            df_result3 = df_result[df_result["sex"]=="f"]
+        if df_clean.iloc[59946]["sex"]=="f":
+            df_result3 = df_result[df_result["sex"]=="m"]
+    if df_clean.iloc[59946]["orientation"]=="gay":
+        if df_clean.iloc[59946]["sex"]=="m":
+            df_result3 = df_result[(df_result["sex"]=="m") & (df_result["orientation"]=="gay")]
+        if df_clean.iloc[59946]["sex"]=="f":
+            df_result3 = df_result[(df_result["sex"]=="f") & (df_result["orientation"]=="gay")]
+    if df_clean.iloc[59946]["orientation"]=="bisexual":
+        df_result3 = df_result
 
-    #return match
+    dict2 = df_result3.head(3).to_dict()
 
     return dict2
 # $DELETE_END
