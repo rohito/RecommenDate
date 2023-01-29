@@ -2,29 +2,21 @@ import streamlit as st
 import time
 import requests
 import pandas as pd
+import numpy as np
+import names
+from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
+from PIL import Image
+import matplotlib.pyplot as plt
+
+
 st.set_page_config(
     page_title="RecommenDate:Find your soulmate",
     page_icon= ":revolving_hearts:",
     layout="wide",
-    initial_sidebar_state="expanded")
+    initial_sidebar_state="expanded",
+    )
 
-with open("style.css") as a:
-    st.markdown(f'<style>{a.read()}</style>',unsafe_allow_html=True)
 
-st.markdown(
-    """
-    <style>
-    [data-testid="stSidebar"][aria-expanded="true"] > div:first-child{
-        width: 500px;
-    }
-    [data-testid="stSidebar"][aria-expanded="false"] > div:first-child{
-        width: 500px;
-        margin-left: -500px;
-    }
-
-    """,
-    unsafe_allow_html=True,
-)
 
 with st.sidebar:
     st.markdown("<h1 style='text-align: center;'>RecommenDate: Find your soulmate 💞</h1>", unsafe_allow_html=True)
@@ -53,7 +45,8 @@ with st.sidebar:
                 essay8 =col2.text_area("The most private thing I am willing to admit")
                 essay9 =col2.text_area("You should message me if...")
             submitted = st.form_submit_button(label= "Bring my soulmate", )
-url = 'https://recommedate-ygdtvu6iaa-ew.a.run.app/predict'
+url = 'https://onlinedatingrecommedersystem-ygdtvu6iaa-ew.a.run.app/predict'
+
 
 params ={
     'sex':gender,
@@ -68,6 +61,19 @@ params ={
     'essay7' : essay7,
     'essay8' : essay8,
     'essay9' : essay9}
+
+mask = np.array(Image.open('heart2.jpg'))
+def similar_color_func(word=None, font_size=None,
+                       position=None, orientation=None,
+                       font_path=None, random_state=None):
+        h = 20 # 0 - 360
+        s = 100 # 0 - 100
+        l = random_state.randint(20, 50) # 0 - 100
+        return "hsl({}, {}%, {}%)".format(h, s, l)
+
+font_path = 'Mogen-Bold.otf'
+
+
 if submitted:
     with st.spinner(":mag: We are finding your possible soulmates..."):
         time.sleep(2)
@@ -93,7 +99,12 @@ if submitted:
         "height","income","job","last_online","location","offspring","pets","religion","sign","smokes","speaks"],inplace=True)
     tab1, tab2, tab3 = st.tabs(["1","2","3"])
     with tab1:
-        st.header(df.index[0])
+        a = ''
+        if(df.iloc[0]["sex"]=="f"):
+              a = names.get_full_name(gender='female')
+        else:
+              a = names.get_full_name(gender='male')
+        st.header(a)
         col1,col2,col3 = st.columns(3)
         with st.container():
             col1.subheader("Age:")
@@ -106,7 +117,7 @@ if submitted:
             col3.markdown(df.iloc[0]["orientation"])
         with st.container():
             st.subheader("My self summary:")
-            st.text(df.iloc[0]["essay0"])
+            st.markdown(df.iloc[0]["essay0"])
         with st.container():
             st.subheader("What I'm doing with my life:")
             st.markdown(df.iloc[0]["essay1"])
@@ -134,8 +145,29 @@ if submitted:
         with st.container():
             st.subheader("You should message me if...:")
             st.markdown(df.iloc[0]["essay9"])
+        with st.container():
+
+            wordcloud = WordCloud(background_color="white",
+                      random_state=42,
+                      width=mask.shape[1],
+                      height=mask.shape[0],
+                      mask=mask,
+                      color_func=similar_color_func,
+                      font_path=font_path).generate(df.iloc[0]["topics"])
+
+            # Display the generated image:
+            (plt.imshow(wordcloud, interpolation='bilinear'))
+            plt.axis("off")
+
+            st.pyplot(plt)
+
     with tab2:
-        st.header(df.index[1])
+        a = ''
+        if(df.iloc[1]["sex"]=="f"):
+              a = names.get_full_name(gender='female')
+        else:
+              a = names.get_full_name(gender='male')
+        st.header(a)
         col1,col2,col3 = st.columns(3)
         with st.container():
             col1.subheader("Age:")
@@ -176,8 +208,28 @@ if submitted:
         with st.container():
             st.subheader("You should message me if...")
             st.markdown(df.iloc[1]["essay9"])
+        with st.container():
+
+            wordcloud = WordCloud(background_color="white",
+                      random_state=42,
+                      width=mask.shape[1],
+                      height=mask.shape[0],
+                      mask=mask,
+                      color_func=similar_color_func,
+                      font_path=font_path).generate(df.iloc[1]["topics"])
+
+            # Display the generated image:
+            (plt.imshow(wordcloud, interpolation='bilinear'))
+            plt.axis("off")
+
+            st.pyplot(plt)
     with tab3:
-        st.header(df.index[2])
+        a = ''
+        if(df.iloc[2]["sex"]=="f"):
+              a = names.get_full_name(gender='female')
+        else:
+              a = names.get_full_name(gender='male')
+        st.header(a)
         col1,col2,col3 = st.columns(3)
         with st.container():
             col1.subheader("Age:")
@@ -187,7 +239,7 @@ if submitted:
             col2.markdown(df.iloc[2]["sex"])
         with st.container():
             col3.subheader("Orientation")
-            col3.text(df.iloc[2]["orientation"])
+            col3.markdown(df.iloc[2]["orientation"])
         with st.container():
             st.subheader("My self summary:")
             st.markdown(df.iloc[2]["essay0"])
@@ -218,3 +270,18 @@ if submitted:
         with st.container():
             st.subheader("You should message me if...:")
             st.markdown(df.iloc[2]["essay9"])
+        with st.container():
+
+            wordcloud = WordCloud(background_color="white",
+                      random_state=42,
+                      width=mask.shape[1],
+                      height=mask.shape[0],
+                      mask=mask,
+                      color_func=similar_color_func,
+                      font_path=font_path).generate(df.iloc[2]["topics"])
+
+            # Display the generated image:
+            (plt.imshow(wordcloud, interpolation='bilinear'))
+            plt.axis("off")
+
+            st.pyplot(plt)
